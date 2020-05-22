@@ -1,11 +1,3 @@
-# from knmi_api import knmi_api
-
-# plt.figure(figsize=[20,7])
-# sns.set_style('darkgrid')
-# plt.plot(X_test.index, abs(y - y_pred), label='Prediction', color='blue')
-# plt.ylim([0,200])
-# plt.legend()
-
 from statsmodels.graphics.tsaplots import plot_acf
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -32,27 +24,7 @@ warnings.filterwarnings('ignore')
 sns.set()
 
 df = pd.read_csv('../data/bikes.csv', index_col=0)
-df['date'] = pd.to_datetime(df['date'], format="%Y-%m-%d")
 
-<<<<<<< HEAD
-day_count = df.date.groupby(df.date.dt.floor('d')).count()
-df_day = pd.DataFrame([day_count.index,day_count.values]).T
-df_day.columns = ['date', 'count']
-df_day.date = pd.to_datetime(df_day.date)
-df_day['month'] = df_day.date.dt.month.astype('category')
-df_day['weekday'] = df_day.date.dt.weekday.astype('category')
-df_day['day'] = df_day.date.dt.dayofyear.astype('int')
-df_day['count'] = df_day['count'].astype('int')
-df_day.count = df_day['count'].astype('int')
-
-# ten_most_rentals = df_day.sort_values('count',ascending=False)
-# ten_most_rentals = ten_most_rentals.head(100)
-# dates_of_ten_most_rentals = list(ten_most_rentals['date'])
-
-
-=======
->>>>>>> parent of 6784730... Effort to get time distribution (Not succesful)
-#Makes a copy of the dataframe so that we don't contaminate the original.
 occupation_df = df.copy()
 
 #Splits the date and the time into two different columns
@@ -60,19 +32,6 @@ occupation_df['start_date'] = pd.to_datetime(df['start_time']).dt.date
 occupation_df['start_time'] = pd.to_datetime(df['start_time']).dt.time
 occupation_df['end_date'] = pd.to_datetime(df['end_time']).dt.date
 occupation_df['end_time'] = pd.to_datetime(df['end_time']).dt.time
-
-<<<<<<< HEAD
-#occupation_df = occupation_df.loc[occupation_df['start_date'].isin(dates_of_ten_most_rentals)]
-
-=======
->>>>>>> parent of 6784730... Effort to get time distribution (Not succesful)
-#Generates a list of 30 minutes intervals starting at 0:00 ending at 23:30
-lis = ['%s:%s' % (h, m) for h in ([0] + list(range(1,24))) for m in ('00', '30')]
-
-#Checks for every time in the time list if that time is between the start and end time of a value in the dataset.
-#Returns a serries with booleans representing if the time is between the start and endtime of the row.
-#Right now they are all false because in the dataset the start time is equeal to the end time so no values can be inbetween them.
-<<<<<<< HEAD
 
 def seconds_converter(list_of_times):
     l = []
@@ -86,73 +45,41 @@ start_in_seconds = seconds_converter(occupation_df['start_time'].astype('str'))
 end_in_seconds = seconds_converter(occupation_df['end_time'].astype('str'))
 differance = end_in_seconds - start_in_seconds
 
-def calc_ussage_between_interval(interval,start_in_seconds,end_in_seconds):
-    """Calculates how many bikes are in use between the given interval. So if given a interval hour it will
-    calcultate how many bike where in use at 01:00,02:00,etc 
+print("Aantal huren onder de 1 uur {} van de {} dat is {} % van totaal".format(str(np.count_nonzero(differance < 3600)), str(len(differance)), str(np.count_nonzero(differance < 3600) / len(differance) * 100 )))
+print("Aantal huren onder de 30 minuten {} van de {} dat is {} % van totaal".format(str(np.count_nonzero(differance < 1800)), str(len(differance)), str(np.count_nonzero(differance < 1800) / len(differance) * 100 )))
+print("Aantal huren onder de 15 minuten {} van de {} dat is {} % van totaal".format(str(np.count_nonzero(differance < 900)), str(len(differance)), str(np.count_nonzero(differance < 900) / len(differance) * 100 )))
+print("Aantal huren onder de 5 minuten {} van de {} dat is {} % van totaal".format(str(np.count_nonzero(differance < 300)), str(len(differance)), str(np.count_nonzero(differance < 300) / len(differance) * 100 )))
+print("Aantal huren onder de 2 minuten {} van de {} dat is {} % van totaal".format(str(np.count_nonzero(differance < 120)), str(len(differance)), str(np.count_nonzero(differance < 120) / len(differance) * 100 )))
 
-    :param interval: How many seconds need te be inbetween intervals
-    :type interval: int
-    :param start_in_seconds: a np array of the ammount of seconds every start time is from start of the day
-    :type start_in_seconds: Np array
-    :param end_in_seconds: a np array of the ammount of seconds every end time is from start of the day
-    :type end_in_seconds: Np array
-    """
-    collum_names = []
-    for i in range (0,86400 - interval,interval):
-        interval_minutes = (i % 3600) / 60
-        interval_hours = i // 3600
-        string = "{}:{}".format(interval_hours,interval_minutes)
-        collum_names.append(string)
+print(str(pd.Timedelta(pd.to_datetime(df['end_time']) - pd.to_datetime(df['start_time'])).seconds))
+
+def calculate_occupation(start_in_seconds, end_in_seconds):
 
     list_of_mask = []
-    for start_time_inteval in range(0, 86400 - interval, interval):
-        end_time_interval = start_time_inteval + interval
-        occupied_at_current_time = (start_in_seconds >= start_time_inteval) & (end_in_seconds <= end_time_interval)
+    for time in range(0, 86400,60):
+        occupied_at_current_time = (time >= start_in_seconds) & (time <= end_in_seconds)
         list_of_mask.append(pd.Series(occupied_at_current_time))
 
-    presentage_done =  round(end_time_interval / 864,1)
-    if presentage_done % 10 == 0:
-        print(str(presentage_done) + "%")
+        presentage_done =  round(time / 864,1)
+        if presentage_done % 10 == 0:
+            print(str(presentage_done) + "%")
+
+    collum_names = []
+    for i in range (0,1440,1):
+            minutes = i % 60
+            hours = i // 60
+            string = "{}:{}".format(hours,minutes)
+            collum_names.append(string)
+
+
 
     oc_df = pd.concat(list_of_mask, axis=1)
     oc_df.columns = collum_names
-    return oc_df
+    occupation_at_time = oc_df.sum()
 
-# Plots the sum of all the bicycles that were occupied at a given time
-occupation_at_time = calc_ussage_between_interval(3600,start_in_seconds,end_in_seconds).sum()
-occupation_at_time.plot()
-occupation_at_time.plot(figsize=(50,30))
-=======
-list_of_mask = []
-for i in range(len(lis)):
-    time = pd.to_datetime(lis[i], format='%H:%M').time()
-    print(time)
-    print(occupation_df['start_time'])
-    print(occupation_df['end_time'])
-    print(time >= occupation_df['start_time'])
-    print(time <= occupation_df['end_time'])
-    a = (time >= occupation_df['start_time']) & (time <= occupation_df['end_time'])
-    list_of_mask.append(a)
+    occupation_at_time.plot()
+    occupation_at_time.plot(figsize=(50,30))
+    plt.title("Total occupation at given time", fontsize=50)
+    plt.show()
 
-
-#Plots the sum of all the bicycles that were occupied at a given time
-oc_df = pd.concat(list_of_mask, axis=1)
-oc_df.columns = lis
-occupation_at_time = oc_df.sum()
-occupation_at_time.plot()
-occupation_at_time.plot(figsize=(50,30))
-plt.xticks(range(0,len(occupation_at_time.index)), occupation_at_time.index)
->>>>>>> parent of 6784730... Effort to get time distribution (Not succesful)
-plt.xticks(fontsize=40, rotation=60)
-plt.yticks(fontsize=40)
-plt.title("Total occupation at given time", fontsize=50)
-plt.show()
-<<<<<<< HEAD
-
-
-print("values under 5 minutes " + str(np.count_nonzero(differance < 300)) + "\n \n" + "total records  " + str(len(differance)))
-
-
-    
-=======
->>>>>>> parent of 6784730... Effort to get time distribution (Not succesful)
+#calculate_occupation(start_in_seconds, end_in_seconds)
